@@ -1,56 +1,48 @@
 package com.example.student.security;
 
 import com.example.student.model.Role;
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtParser;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
+import java.time.Instant;
 import java.util.Date;
-import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 public class JwtService {
-    private final SecretKey SECRET_KEY = Keys.hmacShaKeyFor(
-            "modernprogrammingtechnologiesisinterestingandusefullstudentsloveitreadwritecodeenjoyaprogrammerslifeletusnotgetboredwithrestap".getBytes()
-    );
-    public String generateToken(String username, Set<Role> roles) {
-        List<String> roleNames = roles.stream()
-                .map(Enum::name)
-                .toList();
+    public static final int EXPIRATION_SECONDS = 3600;
+
+    private final SecretKey secretKey;
+    private final JwtParser parser;
+
+    public JwtService(@Value("${app.jwt.secret:}") String secret) {
+        secretKey = secret.isBlank() ? Jwts.SIG.HS256.key().build()
+                : Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret));
+        parser = Jwts.parser().verifyWith(secretKey).build();
+    }
+
+    public String generateToken(String username, Long accountId, Set<Role> roles) {
+        Instant issuedAt = Instant.now();
         return Jwts.builder()
                 .subject(username)
-                .claim("roles", roleNames)
-                .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60)) // 1 час
-                .signWith(SECRET_KEY)
+                .claim("accountId", accountId.toString())
+                .claim("roles", roles.stream().map(Enum::name).sorted().toList())
+                .issuedAt(Date.from(issuedAt))
+                .expiration(Date.from(issuedAt.plusSeconds(EXPIRATION_SECONDS)))
+                .signWith(secretKey)
                 .compact();
     }
-    public String extractUsername(String token) {
-        return parseClaims(token).getSubject();
+
+    SessionClaims parseToken(String token) {
+        Claims claims = parser.parseSignedClaims(token).getPayload();
+        return new SessionClaims(claims.getSubject(), claims.get("accountId", String.class));
     }
-    public boolean validateToken(String token, UserDetails userDetails) {
-        final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
-    }
-    private boolean isTokenExpired(String token) {
-        return parseClaims(token).getExpiration().before(new Date());
-    }
-    private Claims parseClaims(String token) {
-        return Jwts.parser()
-                .verifyWith(SECRET_KEY)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
-    }
-    @SuppressWarnings("unchecked")
-    public Set<Role> extractRoles(String token) {
-        List<String> roleNames = parseClaims(token).get("roles", List.class);
-        return roleNames.stream()
-                .map(Role::valueOf)
-                .collect(Collectors.toSet());
-    }
+
+    record SessionClaims(String username, String accountId) {}
 }

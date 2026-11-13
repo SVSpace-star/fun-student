@@ -2,22 +2,29 @@ package com.example.student.controller;
 
 import com.example.student.dto.*;
 import com.example.student.service.StudentService;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/student")
-@Slf4j
 public class StudentController {
     private final StudentService studentService;
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
-    public StudentResponseList findAll() {
-        return studentService.findAll();
+    public StudentResponseList findAll(
+            @RequestParam(name = "query", required = false) @Size(max = 200) String query,
+            @RequestParam(name = "sort", defaultValue = "id") String sort,
+            @RequestParam(name = "direction", defaultValue = "asc") String direction,
+            @RequestParam(name = "page", required = false) @Min(0) Integer page,
+            @RequestParam(name = "size", required = false) @Min(1) @Max(100) Integer size) {
+        return studentService.findAll(query, sort, direction, page, size);
     }
 
     @GetMapping("/{id}")
@@ -34,13 +41,13 @@ public class StudentController {
 
     @PostMapping("/save")
     @PreAuthorize("hasRole('ADMIN')")
-    public StudentResponse createStudent(@RequestBody StudentRequest studentRequest) {
+    public StudentResponse createStudent(@Valid @RequestBody StudentRequest studentRequest) {
         return studentService.save(studentRequest);
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public StudentResponse updateStudent(@PathVariable Long id, @RequestBody StudentUpdateRequest request) {
+    public StudentResponse updateStudent(@PathVariable Long id, @Valid @RequestBody StudentUpdateRequest request) {
         return studentService.update(id, request);
     }
 

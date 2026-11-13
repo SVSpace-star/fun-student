@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:16
+    ports:
+      - "127.0.0.1:${STUDENT_DB_PORT:-5432}:5432"
+    environment:
+      POSTGRES_DB: students_db
+      POSTGRES_USER: ${STUDENT_DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${STUDENT_DB_PASSWORD:?Set STUDENT_DB_PASSWORD}
+      POSTGRES_INITDB_ARGS: --locale-provider=icu --icu-locale=und
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  postgres-data:

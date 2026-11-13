@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <title>Деканат — реестр студентов</title>
+    <link rel="stylesheet" href="./assets/styles.css">
+    <script src="./assets/preview.js" defer></script>
+    <script src="./assets/app.js" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#content">К содержанию</a>
+<header class="topbar">
+    <div class="brand" aria-label="Деканат">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <span>Деканат</span>
+    </div>
+    <div class="topbar-actions">
+        <label id="preview-role-control" class="preview-role" hidden>
+            <span>Демо-роль</span>
+            <select id="preview-role" aria-label="Демонстрационная роль">
+                <option value="ADMIN">Администратор</option>
+                <option value="TEACHER">Преподаватель</option>
+                <option value="SUPER_ADMIN">Суперадминистратор</option>
+            </select>
+        </label>
+        <button id="theme" class="button ghost theme-button" type="button" aria-pressed="false">
+            <span class="theme-icon" aria-hidden="true"></span><span id="theme-label">Тёмная тема</span>
+        </button>
+    </div>
+</header>
+
+<main id="content" tabindex="-1">
+    <section id="login" class="login-layout" aria-labelledby="login-title">
+        <div class="login-intro">
+            <span class="section-label">Учебный реестр</span>
+            <h1>Студенты<br>и контакты</h1>
+            <p>Поиск студентов, карточки с контактами и управление доступом сотрудников.</p>
+            <div class="book-spines" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        </div>
+        <div class="login-panel">
+            <h2 id="login-title">Вход в систему</h2>
+            <noscript><p>Для входа включите JavaScript в браузере.</p></noscript>
+            <form id="login-form" class="form-stack" method="post">
+                <label>Электронная почта
+                    <input id="login-email" name="email" type="email" autocomplete="username" placeholder="name@example.com" required maxlength="254">
+                </label>
+                <label>Пароль
+                    <input name="password" type="password" autocomplete="current-password" required maxlength="72">
+                </label>
+                <p class="form-error" role="alert" hidden></p>
+                <button type="submit" class="button primary">Войти <span aria-hidden="true">→</span></button>
+            </form>
+        </div>
+    </section>
+
+    <div id="workspace" class="workspace" hidden>
+        <aside class="sidebar" aria-label="Рабочая область">
+            <nav class="sidebar-nav" aria-label="Разделы реестра">
+                <button id="students-nav" class="nav-button" type="button" data-section="students">
+                    <span class="nav-icon students-icon" aria-hidden="true"></span>Студенты
+                </button>
+                <button id="users-nav" class="nav-button" type="button" data-section="users">
+                    <span class="nav-icon users-icon" aria-hidden="true"></span>Пользователи
+                </button>
+            </nav>
+            <div class="account">
+                <p id="account-email" class="account-email"></p>
+                <p id="account-roles" class="account-roles"></p>
+                <button id="logout" class="button ghost" type="button">Выйти <span aria-hidden="true">↗</span></button>
+            </div>
+        </aside>
+
+        <section id="directory" class="directory" aria-labelledby="directory-title">
+            <p id="preview-note" class="preview-note" hidden>Демонстрация · Изменения сбрасываются при перезагрузке.</p>
+            <header class="directory-heading">
+                <div>
+                    <h1 id="directory-title">Студенты</h1>
+                    <p id="directory-description">Имена и контактные данные студентов</p>
+                </div>
+                <button id="add-entry" class="button primary" type="button"><span aria-hidden="true">+</span><span id="add-label">Добавить студента</span></button>
+            </header>
+            <div id="directory-card" class="directory-card">
+                <form id="list-tools" class="list-tools" role="search" aria-label="Поиск и сортировка записей">
+                    <label class="search-field">
+                        <span class="visually-hidden" id="search-label">Поиск по имени, фамилии или ID</span>
+                        <span class="search-icon" aria-hidden="true"></span>
+                        <input id="query" name="query" type="search" placeholder="Имя, фамилия или ID" autocomplete="off" maxlength="254">
+                    </label>
+                    <label id="filter-field" class="tool-field" hidden>
+                        <span class="visually-hidden">Фильтр по роли</span>
+                        <select id="role-filter">
+                            <option value="">Все роли</option>
+                            <option value="SUPER_ADMIN">Суперадминистратор</option>
+                            <option value="ADMIN">Администратор</option>
+                            <option value="TEACHER">Преподаватель</option>
+                        </select>
+                    </label>
+                    <label class="tool-field">
+                        <span class="visually-hidden">Порядок сортировки</span>
+                        <select id="sort"></select>
+                    </label>
+                </form>
+                <div id="list-status" class="list-state" aria-live="polite" hidden>
+                    <p id="list-message"></p>
+                    <button id="retry" class="button secondary" type="button" hidden>Повторить</button>
+                </div>
+                <div id="table-wrap" class="table-wrap" hidden>
+                    <table id="records">
+                        <caption class="visually-hidden" id="table-caption">Список студентов</caption>
+                        <thead><tr id="columns"></tr></thead>
+                        <tbody id="rows"></tbody>
+                    </table>
+                </div>
+                <footer id="list-footer" class="list-footer">
+                    <span id="page-summary" aria-live="polite"></span>
+                    <div id="pagination" class="pagination" aria-label="Страницы списка" hidden>
+                        <button id="previous" class="button secondary page-button" type="button" aria-label="Предыдущая страница">←</button>
+                        <span id="page-number" aria-live="polite"></span>
+                        <button id="next" class="button secondary page-button" type="button" aria-label="Следующая страница">→</button>
+                    </div>
+                </footer>
+            </div>
+            <p id="announcement" class="visually-hidden" role="status"></p>
+            <div id="toast" class="toast" hidden aria-hidden="true"></div>
+        </section>
+    </div>
+</main>
+
+<dialog id="dialog" class="dialog" aria-labelledby="dialog-title">
+    <div class="dialog-heading">
+        <h2 id="dialog-title"></h2>
+        <button id="close-dialog" type="button" class="button ghost close-button" aria-label="Закрыть">×</button>
+    </div>
+    <div id="dialog-content"></div>
+</dialog>
+
+<template id="student-form-template">
+    <form class="form-stack edit-form">
+        <div class="form-columns">
+            <label>Имя <input name="name" required maxlength="255" autocomplete="off"></label>
+            <label>Фамилия <input name="surname" required maxlength="255" autocomplete="off"></label>
+        </div>
+        <label>Телефон <input type="tel" name="phoneNumber" maxlength="32" autocomplete="off" placeholder="+7 900 000-00-00"></label>
+        <label>Электронная почта <input type="email" name="email" maxlength="255" autocomplete="off"></label>
+        <p class="form-error" role="alert" hidden></p>
+        <div class="form-actions">
+            <button class="button secondary" type="button" data-cancel>Отмена</button>
+            <button class="button primary" type="submit">Сохранить</button>
+        </div>
+    </form>
+</template>
+
+<template id="user-form-template">
+    <form class="form-stack edit-form">
+        <label>Электронная почта <input type="email" name="email" required maxlength="254" autocomplete="off"></label>
+        <label>Пароль <input type="password" name="password" autocomplete="new-password"></label>
+        <fieldset class="role-fieldset">
+            <legend>Роли</legend>
+            <label><input type="checkbox" name="role" value="TEACHER"> Преподаватель</label>
+            <label><input type="checkbox" name="role" value="ADMIN"> Администратор</label>
+            <label><input type="checkbox" name="role" value="SUPER_ADMIN"> Суперадминистратор</label>
+        </fieldset>
+        <p class="form-error" role="alert" hidden></p>
+        <div class="form-actions">
+            <button class="button secondary" type="button" data-cancel>Отмена</button>
+            <button class="button primary" type="submit">Сохранить</button>
+        </div>
+    </form>
+</template>
+</body>
+</html>

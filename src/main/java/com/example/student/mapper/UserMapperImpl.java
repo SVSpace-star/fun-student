@@ -7,12 +7,14 @@ import com.example.student.model.User;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @Component
 public class UserMapperImpl implements UserMapper {
     @Override
     public UserResponse toResponse(User user) {
-        return new UserResponse(user.getId(), user.getEmail(), user.getRoles());
+        return new UserResponse(user.getId(), user.getEmail(), Set.copyOf(user.getRoles()));
     }
 
     @Override
@@ -20,7 +22,7 @@ public class UserMapperImpl implements UserMapper {
         User user = new User();
         user.setEmail(userRequest.getEmail());
         user.setPassword(userRequest.getPassword());
-        user.setRoles(userRequest.getRoles());
+        user.setRoles(new HashSet<>(userRequest.getRoles()));
         return user;
     }
 
